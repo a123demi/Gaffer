@@ -44,7 +44,8 @@ import static org.junit.Assert.assertEquals;
 
 public class RestApiTestUtil {
     public static final String REST_URI = "http://localhost:8080/rest/v1";
-    public static final String GRAPH_ID = "graph1";
+    public static final String GRAPH_ID = "graphId1";
+    public static final String GRAPH_NAME = "graph1";
     public static final JSONSerialiser JSON_SERIALISER = new JSONSerialiser();
     private static final Client client = ClientBuilder.newClient();
     private static HttpServer server;
@@ -83,16 +84,16 @@ public class RestApiTestUtil {
         }
 
         // set properties for REST service
-        System.setProperty(SystemProperty.STORE_PROPERTIES_PATH, testFolder.getRoot() + "/store.properties");
-        System.setProperty(SystemProperty.SCHEMA_PATHS, testFolder.getRoot() + "/schema.json");
-        System.setProperty(SystemProperty.GRAPH_ID, GRAPH_ID);
+        System.setProperty(SystemProperty.GRAPH_PREFIX + GRAPH_NAME + SystemProperty.GRAPH_ID_SUFFIX, GRAPH_ID);
+        System.setProperty(SystemProperty.GRAPH_PREFIX + GRAPH_NAME + SystemProperty.GRAPH_PROPERTIES_SUFFIX, testFolder.getRoot() + "/store.properties");
+        System.setProperty(SystemProperty.GRAPH_PREFIX + GRAPH_NAME + SystemProperty.GRAPH_SCHEMA_SUFFIX, testFolder.getRoot() + "/schema.json");
 
         reinitialiseGraph();
     }
 
 
     public static void reinitialiseGraph() throws IOException {
-        DefaultGraphFactory.setGraph(null);
+        DefaultGraphFactory.clear();
 
         startServer();
         checkRestServiceStatus();
@@ -107,7 +108,7 @@ public class RestApiTestUtil {
     public static Response executeOperation(final Operation operation) throws IOException {
         startServer();
         return client.target(REST_URI)
-                .path("/graph/doOperation/operation")
+                .path("/graph/" + GRAPH_NAME + "/doOperation/operation")
                 .request()
                 .post(Entity.entity(JSON_SERIALISER.serialise(operation), MediaType.APPLICATION_JSON_TYPE));
     }
@@ -115,7 +116,7 @@ public class RestApiTestUtil {
     public static Response executeOperationChain(final OperationChain opChain) throws IOException {
         startServer();
         return client.target(REST_URI)
-                .path("/graph/doOperation")
+                .path("/graph/" + GRAPH_NAME + "/doOperation")
                 .request()
                 .post(Entity.entity(JSON_SERIALISER.serialise(opChain), MediaType.APPLICATION_JSON_TYPE));
     }
@@ -123,7 +124,7 @@ public class RestApiTestUtil {
     public static Response executeOperationChainChunked(final OperationChain opChain) throws IOException {
         startServer();
         return client.target(REST_URI)
-                .path("/graph/doOperation/chunked")
+                .path("/graph/" + GRAPH_NAME + "/doOperation/chunked")
                 .request()
                 .post(Entity.entity(JSON_SERIALISER.serialise(opChain), MediaType.APPLICATION_JSON_TYPE));
     }
@@ -131,7 +132,7 @@ public class RestApiTestUtil {
     public static Response executeOperationChunked(final Operation operation) throws IOException {
         startServer();
         return client.target(REST_URI)
-                .path("/graph/doOperation/chunked/operation")
+                .path("/graph/" + GRAPH_NAME + "/doOperation/chunked/operation")
                 .request()
                 .post(Entity.entity(JSON_SERIALISER.serialise(operation), MediaType.APPLICATION_JSON_TYPE));
     }
@@ -145,9 +146,11 @@ public class RestApiTestUtil {
     private static void checkRestServiceStatus() {
         // Given
         final Response response = client.target(REST_URI)
-                .path("status")
+                .path("/" + GRAPH_NAME + "/status")
                 .request()
                 .get();
+
+        assertEquals("Response was: " + response.getEntity(), Response.Status.OK, Response.Status.fromStatusCode(response.getStatus()));
 
         // When
         final String statusMsg = response.readEntity(SystemStatus.class)

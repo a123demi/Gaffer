@@ -19,10 +19,12 @@ package uk.gov.gchq.gaffer.rest.service;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import uk.gov.gchq.gaffer.rest.GraphConfig;
 import uk.gov.gchq.gaffer.store.StoreTrait;
 import uk.gov.gchq.gaffer.store.schema.Schema;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -33,14 +35,21 @@ import java.util.Set;
  * An <code>IGraphConfigurationService</code> has methods to get {@link uk.gov.gchq.gaffer.graph.Graph} configuration information
  * such as the {@link Schema} and available {@link uk.gov.gchq.gaffer.operation.Operation}s.
  */
-@Path("/graph")
+@Path("/graph/{graphName}")
 @Produces(MediaType.APPLICATION_JSON)
 @Api(value = "/graph", description = "Methods to get graph configuration information.")
 public interface IGraphConfigurationService {
+    @PUT
+    @ApiOperation(value = "Adds a new graph")
+    void addGraph(
+            @ApiParam(value = "graphName") @PathParam("graphName") final String graphName,
+            final GraphConfig graphConfig
+    );
+
     @GET
     @Path("/schema")
     @ApiOperation(value = "Gets the schema", response = String.class, responseContainer = "list")
-    Schema getSchema();
+    Schema getSchema(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName);
 
     @GET
     @Path("/filterFunctions")
@@ -70,24 +79,24 @@ public interface IGraphConfigurationService {
     @GET
     @Path("/operations")
     @ApiOperation(value = "Gets all operations supported by the store. See <a href='https://github.com/gchq/Gaffer/wiki/operation-examples' target='_blank' style='text-decoration: underline;'>Wiki</a>.", response = String.class, responseContainer = "list")
-    Set<Class> getOperations();
+    Set<Class> getOperations(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName);
 
     @GET
     @Path("/storeTraits")
     @ApiOperation(value = "Gets all supported store traits", response = StoreTrait.class, responseContainer = "list")
-    Set<StoreTrait> getStoreTraits();
+    Set<StoreTrait> getStoreTraits(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName);
 
     @GET
     @Path("/nextOperations/{className}")
     @ApiOperation(value = "Gets all the compatible operations that could be added to an operation chain after the provided operation.",
             response = String.class, responseContainer = "list")
-    Set<Class> getNextOperations(@ApiParam(value = "an operation class name") @PathParam("className") final String operationClassName);
+    Set<Class> getNextOperations(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName, @ApiParam(value = "an operation class name") @PathParam("className") final String operationClassName);
 
     @POST
     @Path("/isOperationSupported")
     @ApiOperation(value = "Determines whether the operation type supplied is supported by the store",
             response = Boolean.class)
-    Boolean isOperationSupported(final Class operation);
+    Boolean isOperationSupported(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName, final Class operation);
 
     @GET
     @Path("/serialisedFields/{className}")

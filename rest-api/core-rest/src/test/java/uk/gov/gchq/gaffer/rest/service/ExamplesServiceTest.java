@@ -38,6 +38,7 @@ import uk.gov.gchq.gaffer.store.schema.SchemaEdgeDefinition;
 import uk.gov.gchq.gaffer.store.schema.SchemaEntityDefinition;
 import uk.gov.gchq.gaffer.store.schema.ViewValidator;
 import java.io.IOException;
+import java.util.Collections;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -83,22 +84,12 @@ public class ExamplesServiceTest {
                 .graphId("graphId")
                 .store(store)
                 .build();
-        given(graphFactory.getGraph()).willReturn(graph);
+        given(graphFactory.getGraphs()).willReturn(Collections.singleton(graph));
     }
 
     @Test
     public void shouldSerialiseAndDeserialiseAddElements() throws IOException {
         shouldSerialiseAndDeserialiseOperation(service.addElements());
-    }
-
-    @Test
-    public void shouldSerialiseAndDeserialiseGetElementsBySeed() throws IOException {
-        shouldSerialiseAndDeserialiseOperation(service.getElementsBySeed());
-    }
-
-    @Test
-    public void shouldSerialiseAndDeserialiseGetRelatedElements() throws IOException {
-        shouldSerialiseAndDeserialiseOperation(service.getRelatedElements());
     }
 
     @Test

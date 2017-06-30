@@ -33,22 +33,37 @@ public class RestApiIT extends AbstractRestApiIT {
     public void shouldReturnOkStatusMessage() {
         // Given
         final Response response = client.target("http://localhost:8080/rest/v1")
+                .path("graph1/status")
+                .request()
+                .get();
+
+        // When
+        final Map<String, String> status = response.readEntity(Map.class);
+
+        // Then
+        assertEquals("The system is working normally.", status.get("description"));
+    }
+
+    @Test
+    public void shouldReturnOkFederatedStatusMessage() {
+        // Given
+        final Response response = client.target("http://localhost:8080/rest/v1")
                 .path("status")
                 .request()
                 .get();
 
         // When
-        final Map<String, String> statusMessage = response.readEntity(Map.class);
+        final Map<String, Map> statuses = response.readEntity(Map.class);
 
         // Then
-        assertEquals("The system is working normally.", statusMessage.get("description"));
+        assertEquals("The system is working normally.", statuses.get("graph1").get("description"));
     }
 
     @Test
     public void shouldRetrieveSchema() {
         // Given
         final Response response = client.target("http://localhost:8080/rest/v1")
-                .path("graph/schema")
+                .path("graph/graph1/schema")
                 .request()
                 .get();
 

@@ -63,12 +63,13 @@ public class DataLoader implements ServletContextListener {
                         .build())
                 .build();
 
-        final Graph graph = GraphFactory.createGraphFactory().getGraph();
-        try {
-            graph.execute(populateChain, new User());
-        } catch (OperationException e) {
-            LOGGER.info("Unable to load data: " + e.getMessage());
-            throw new RuntimeException("Unable to load data", e);
+        for (final Graph graph : GraphFactory.createGraphFactory().getGraphs()) {
+            try {
+                graph.execute(populateChain, new User());
+            } catch (OperationException e) {
+                LOGGER.info("Unable to load data: " + e.getMessage());
+                throw new RuntimeException("Unable to load data", e);
+            }
         }
 
         LOGGER.info("Sample data has been loaded");

@@ -93,42 +93,6 @@ public class ExamplesService implements IExamplesService {
     }
 
     @Override
-    public GetElements getElementsBySeed() {
-        final GetElements op = new GetElements();
-        final List<ElementId> seeds = new ArrayList<>();
-        if (hasEntities()) {
-            seeds.add(getEntityId(1));
-        }
-
-        if (hasEdges()) {
-            seeds.add(getEdgeId(1, 2));
-        }
-
-        op.setInput(seeds);
-        populateOperation(op);
-        return op;
-    }
-
-    @Override
-    public GetElements getRelatedElements() {
-        final GetElements op = new GetElements();
-        final List<ElementId> seeds = new ArrayList<>();
-        if (hasEntities()) {
-            seeds.add(getEntityId(1));
-        } else if (hasEdges()) {
-            seeds.add(new EntitySeed(getEdgeId(1, 2).getSource()));
-        }
-
-        if (hasEdges()) {
-            seeds.add(getEdgeId(1, 2));
-        }
-
-        op.setInput(seeds);
-        populateOperation(op);
-        return op;
-    }
-
-    @Override
     public GetAdjacentIds getAdjacentIds() {
         final GetAdjacentIds op = new GetAdjacentIds();
         final List<EntityId> seeds = new ArrayList<>();
@@ -231,7 +195,7 @@ public class ExamplesService implements IExamplesService {
     }
 
     private Schema getSchema() {
-        return graphFactory.getGraph().getSchema();
+        return graphFactory.getGraphs().iterator().next().getSchema();
     }
 
     private void populateOperation(final Output operation) {

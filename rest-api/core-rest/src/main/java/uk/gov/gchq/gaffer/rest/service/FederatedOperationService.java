@@ -25,6 +25,7 @@ import uk.gov.gchq.gaffer.commonutil.CloseableUtil;
 import uk.gov.gchq.gaffer.commonutil.iterable.CloseableIterable;
 import uk.gov.gchq.gaffer.data.element.Element;
 import uk.gov.gchq.gaffer.data.element.id.EntityId;
+import uk.gov.gchq.gaffer.graph.Graph;
 import uk.gov.gchq.gaffer.operation.Operation;
 import uk.gov.gchq.gaffer.operation.OperationChain;
 import uk.gov.gchq.gaffer.operation.OperationException;
@@ -39,23 +40,12 @@ import uk.gov.gchq.gaffer.rest.factory.UserFactory;
 import uk.gov.gchq.gaffer.user.User;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.Collection;
 
 import static uk.gov.gchq.gaffer.jsonserialisation.JSONSerialiser.createDefaultMapper;
 
-/**
- * An implementation of {@link uk.gov.gchq.gaffer.rest.service.IOperationService}. By default it will use a singleton
- * {@link uk.gov.gchq.gaffer.graph.Graph} generated using the {@link uk.gov.gchq.gaffer.rest.factory.GraphFactory}.
- * All operations are simple delegated to the graph.
- * Pre and post operation hooks are available by extending this class and implementing preOperationHook and/or
- * postOperationHook.
- * <p>
- * By default queries will be executed with an UNKNOWN user containing no auths.
- * The createUser() method should be overridden and a {@link User} object should
- * be created from the http request.
- * </p>
- */
-public class OperationService implements IOperationService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(OperationService.class);
+public class FederatedOperationService implements IFederatedOperationService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FederatedOperationService.class);
     public final ObjectMapper mapper = createDefaultMapper();
 
     @Inject
@@ -65,18 +55,18 @@ public class OperationService implements IOperationService {
     private UserFactory userFactory;
 
     @Override
-    public Object execute(final String graphName, final OperationChain opChain) {
-        return _execute(graphName, opChain);
+    public Object execute(final OperationChain opChain) {
+        return _execute(opChain);
     }
 
     @Override
-    public Object execute(final String graphName, final Operation operation) {
-        return _execute(graphName, operation);
+    public Object execute(final Operation operation) {
+        return _execute(operation);
     }
 
     @SuppressFBWarnings
     @Override
-    public ChunkedOutput<String> executeChunked(final String graphName, final OperationChain opChain) {
+    public ChunkedOutput<String> executeChunked(final OperationChain opChain) {
         // Create chunked output instance
         final ChunkedOutput<String> output = new ChunkedOutput<>(String.class, "\r\n");
 
@@ -85,7 +75,7 @@ public class OperationService implements IOperationService {
             @Override
             public void run() {
                 try {
-                    final Object result = _execute(graphName, opChain);
+                    final Object result = _execute(opChain);
                     chunkResult(result, output);
                 } finally {
                     CloseableUtil.close(output);
@@ -99,38 +89,38 @@ public class OperationService implements IOperationService {
 
     @SuppressFBWarnings
     @Override
-    public ChunkedOutput<String> executeChunked(final String graphName, final Operation operation) {
-        return executeChunked(graphName, new OperationChain(operation));
+    public ChunkedOutput<String> executeChunked(final Operation operation) {
+        return executeChunked(new OperationChain(operation));
     }
 
     @Override
-    public CloseableIterable<Object> generateObjects(final String graphName, final GenerateObjects<Object> operation) {
-        return _execute(graphName, operation);
+    public CloseableIterable<Object> generateObjects(final GenerateObjects<Object> operation) {
+        return _execute(operation);
     }
 
     @Override
-    public CloseableIterable<Element> generateElements(final String graphName, final GenerateElements<Object> operation) {
-        return _execute(graphName, operation);
+    public CloseableIterable<Element> generateElements(final GenerateElements<Object> operation) {
+        return _execute(operation);
     }
 
     @Override
-    public CloseableIterable<EntityId> getAdjacentIds(final String graphName, final GetAdjacentIds operation) {
-        return _execute(graphName, operation);
+    public CloseableIterable<EntityId> getAdjacentIds(final GetAdjacentIds operation) {
+        return _execute(operation);
     }
 
     @Override
-    public CloseableIterable<Element> getAllElements(final String graphName, final GetAllElements operation) {
-        return _execute(graphName, operation);
+    public CloseableIterable<Element> getAllElements(final GetAllElements operation) {
+        return _execute(operation);
     }
 
     @Override
-    public CloseableIterable<Element> getElements(final String graphName, final GetElements operation) {
-        return _execute(graphName, operation);
+    public CloseableIterable<Element> getElements(final GetElements operation) {
+        return _execute(operation);
     }
 
     @Override
-    public void addElements(final String graphName, final AddElements operation) {
-        _execute(graphName, operation);
+    public void addElements(final AddElements operation) {
+        _execute(operation);
     }
 
     protected void preOperationHook(final OperationChain<?> opChain, final User user) {
@@ -141,18 +131,20 @@ public class OperationService implements IOperationService {
         // no action by default
     }
 
-    protected <O> O _execute(final String graphName, final Operation operation) {
-        return _execute(graphName, new OperationChain<>(operation));
+    protected <O> O _execute(final Operation operation) {
+        return _execute(new OperationChain<>(operation));
     }
 
     @SuppressWarnings("ThrowFromFinallyBlock")
-    protected <O> O _execute(final String graphName, final OperationChain<O> opChain) {
+    protected <O> O _execute(final OperationChain<O> opChain) {
         final User user = userFactory.createUser();
         preOperationHook(opChain, user);
 
         O result;
         try {
-            result = graphFactory.getGraph(graphName).execute(opChain, user);
+            final Collection<Graph> graphs = graphFactory.getGraphs();
+            // TODO: federate all graphs
+            result = graphs.iterator().next().execute(opChain, user);
         } catch (final OperationException e) {
             CloseableUtil.close(opChain);
             throw new RuntimeException("Error executing opChain", e);

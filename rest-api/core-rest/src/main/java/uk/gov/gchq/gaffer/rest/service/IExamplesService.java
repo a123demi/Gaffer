@@ -60,14 +60,6 @@ public interface IExamplesService {
     Operation executeChunkedOperation();
 
     @GET
-    @Path("/graph/doOperation/get/elements/bySeed")
-    GetElements getElementsBySeed();
-
-    @GET
-    @Path("/graph/doOperation/get/elements/related")
-    GetElements getRelatedElements();
-
-    @GET
     @Path("/graph/doOperation/get/entityIds/adjacent")
     GetAdjacentIds getAdjacentIds();
 

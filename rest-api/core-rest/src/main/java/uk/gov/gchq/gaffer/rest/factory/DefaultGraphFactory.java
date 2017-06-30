@@ -15,152 +15,64 @@
  */
 package uk.gov.gchq.gaffer.rest.factory;
 
-import uk.gov.gchq.gaffer.data.elementdefinition.exception.SchemaException;
 import uk.gov.gchq.gaffer.graph.Graph;
-import uk.gov.gchq.gaffer.graph.hook.OperationAuthoriser;
-import uk.gov.gchq.gaffer.graph.hook.OperationChainLimiter;
-import uk.gov.gchq.gaffer.rest.SystemProperty;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import uk.gov.gchq.gaffer.rest.GraphConfig;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DefaultGraphFactory implements GraphFactory {
-    private static Graph graph;
-
-    private static final OperationChainLimiter OPERATION_CHAIN_LIMITER = createStaticChainLimiter();
-
-    /**
-     * Set to true by default - so the same instance of {@link Graph} will be
-     * returned.
-     */
-    private boolean singletonGraph = true;
+    private static boolean initialised = false;
+    private static final Map<String, Graph> GRAPHS = new HashMap<>();
+    private static Map<String, GraphConfig> graphConfigs = new HashMap<>();
 
     public DefaultGraphFactory() {
         // Graph factories should be constructed via the createGraphFactory static method,
         // public constructor is required only by HK2
-    }
-
-    public static GraphFactory createGraphFactory() {
-        final String graphFactoryClass = System.getProperty(SystemProperty.GRAPH_FACTORY_CLASS,
-                SystemProperty.GRAPH_FACTORY_CLASS_DEFAULT);
-
-        try {
-            return Class.forName(graphFactoryClass)
-                    .asSubclass(GraphFactory.class)
-                    .newInstance();
-        } catch (final InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-            throw new IllegalArgumentException("Unable to create graph factory from class: " + graphFactoryClass, e);
+        if (!initialised) {
+            graphConfigs = loadGraphConfigs();
+            addGraphs(graphConfigs);
+            initialised = true;
         }
     }
 
-
-    private static OperationChainLimiter createStaticChainLimiter() {
-        if (isChainLimiterEnabled()) {
-            if (null == System.getProperty(SystemProperty.OPERATION_SCORES_FILE, null)) {
-                throw new IllegalArgumentException("Required property has not been set: " + SystemProperty.OPERATION_SCORES_FILE);
-            }
-
-            if (null == System.getProperty(SystemProperty.AUTH_SCORES_FILE, null)) {
-                throw new IllegalArgumentException("Required property has not been set: " + SystemProperty.AUTH_SCORES_FILE);
-            }
-
-            return new OperationChainLimiter(Paths.get(System.getProperty(SystemProperty.OPERATION_SCORES_FILE)), Paths.get(System.getProperty(SystemProperty.AUTH_SCORES_FILE)));
-        }
-
-        return null;
-    }
-
-    private static boolean isChainLimiterEnabled() {
-        return Boolean.parseBoolean(System.getProperty(SystemProperty.ENABLE_CHAIN_LIMITER, "false"));
-    }
-
-    protected static String getGraphId() {
-        return System.getProperty(SystemProperty.GRAPH_ID);
-    }
-
-    protected static Path[] getSchemaPaths() {
-        final String schemaPaths = System.getProperty(SystemProperty.SCHEMA_PATHS);
-        if (null == schemaPaths) {
-            return new Path[0];
-        }
-
-        final String[] schemaPathsArray = schemaPaths.split(",");
-        final Path[] paths = new Path[schemaPathsArray.length];
-        for (int i = 0; i < paths.length; i++) {
-            paths[i] = Paths.get(schemaPathsArray[i]);
-        }
-
-        return paths;
+    public static void clear() {
+        initialised = false;
+        GRAPHS.clear();
+        graphConfigs.clear();
     }
 
     @Override
-    public Graph getGraph() {
-        if (singletonGraph) {
-            if (null == graph) {
-                setGraph(createGraph());
-            }
-            return graph;
-        }
-
-        return createGraph();
-    }
-
-    public static void setGraph(final Graph graph) {
-        DefaultGraphFactory.graph = graph;
-    }
-
-    public boolean isSingletonGraph() {
-        return singletonGraph;
-    }
-
-    public void setSingletonGraph(final boolean singletonGraph) {
-        this.singletonGraph = singletonGraph;
+    public void addGraphConfig(final String graphName, final GraphConfig graphConfig) {
+        graphConfigs.put(graphName, graphConfig);
     }
 
     @Override
-    public Graph.Builder createGraphBuilder() {
-        final Path storePropertiesPath = Paths.get(System.getProperty(SystemProperty.STORE_PROPERTIES_PATH));
-        if (null == storePropertiesPath) {
-            throw new SchemaException("The path to the Store Properties was not found in system properties for key: " + SystemProperty.STORE_PROPERTIES_PATH);
-        }
+    public GraphConfig getGraphConfig(final String graphName) {
+        return graphConfigs.get(graphName);
+    }
 
-        final Graph.Builder builder = new Graph.Builder();
-        builder.storeProperties(storePropertiesPath);
-        builder.graphId(getGraphId());
-        for (final Path path : getSchemaPaths()) {
-            builder.addSchema(path);
-        }
 
-        final OperationAuthoriser opAuthoriser = createOpAuthoriser();
-        if (null != opAuthoriser) {
-            builder.addHook(opAuthoriser);
+    @Override
+    public void addGraph(final String graphName, final Graph graph) {
+        if (GRAPHS.containsKey(graphName)) {
+            throw new IllegalArgumentException("GraphName " + graphName + " already exists");
         }
-
-        if (null != OPERATION_CHAIN_LIMITER) {
-            builder.addHook(OPERATION_CHAIN_LIMITER);
-        }
-
-        return builder;
+        GRAPHS.put(graphName, graph);
     }
 
     @Override
-    public OperationAuthoriser createOpAuthoriser() {
-        OperationAuthoriser opAuthoriser = null;
-
-        final String opAuthsPathStr = System.getProperty(SystemProperty.OP_AUTHS_PATH);
-        if (null != opAuthsPathStr) {
-            final Path opAuthsPath = Paths.get(System.getProperty(SystemProperty.OP_AUTHS_PATH));
-            if (opAuthsPath.toFile().exists()) {
-                opAuthoriser = new OperationAuthoriser(opAuthsPath);
-            } else {
-                throw new IllegalArgumentException("Could not find operation authorisation properties from path: " + opAuthsPathStr);
-            }
-        }
-
-        return opAuthoriser;
+    public Graph getGraph(final String graphName) {
+        return GRAPHS.get(graphName);
     }
 
     @Override
-    public Graph createGraph() {
-        return createGraphBuilder().build();
+    public Collection<String> getGraphNames() {
+        return GRAPHS.keySet();
+    }
+
+    @Override
+    public Collection<Graph> getGraphs() {
+        return GRAPHS.values();
     }
 }

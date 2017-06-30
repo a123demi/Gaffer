@@ -34,7 +34,7 @@ import javax.ws.rs.core.MediaType;
  * An <code>IJobService</code> handles jobs - executing Jobs and getting Job
  * statuses.
  */
-@Path("/graph/jobs")
+@Path("/graph/{graphName}/jobs")
 @Api(value = "job", description = "Allows jobs to be executed on the graph. See <a href='https://github.com/gchq/Gaffer/wiki/operation-examples' target='_blank'>Wiki</a>.")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
@@ -43,19 +43,19 @@ public interface IJobService {
     @POST
     @Path("/doOperation")
     @ApiOperation(value = "Performs the given operation chain job on the graph", response = JobDetail.class)
-    JobDetail executeJob(final OperationChain opChain);
+    JobDetail executeJob(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName, final OperationChain opChain);
 
     @GET
     @ApiOperation(value = "Get the details of all jobs", response = JobDetail.class, responseContainer = "List")
-    CloseableIterable<JobDetail> details();
+    CloseableIterable<JobDetail> details(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName);
 
     @GET
     @Path("{id}")
     @ApiOperation(value = "Get the details of a job", response = JobDetail.class)
-    JobDetail details(@ApiParam(value = "a job id") @PathParam("id") final String id);
+    JobDetail details(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName, @ApiParam(value = "a job id") @PathParam("id") final String id);
 
     @GET
     @Path("{id}/results")
     @ApiOperation(value = "Get the results of a job", response = Object.class, responseContainer = "List")
-    CloseableIterable results(@ApiParam(value = "a job id") @PathParam("id") final String id);
+    CloseableIterable results(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName, @ApiParam(value = "a job id") @PathParam("id") final String id);
 }

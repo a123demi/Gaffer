@@ -18,7 +18,6 @@ package uk.gov.gchq.gaffer.rest.service;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import org.glassfish.jersey.server.ChunkedOutput;
 import uk.gov.gchq.gaffer.commonutil.iterable.CloseableIterable;
 import uk.gov.gchq.gaffer.data.element.Element;
@@ -35,66 +34,65 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 /**
- * An <code>IOperationService</code> has methods to execute {@link uk.gov.gchq.gaffer.operation.Operation}s on the
+ * An <code>IFederatedOperationService</code> has methods to execute {@link Operation}s on the
  * {@link uk.gov.gchq.gaffer.graph.Graph}.
  */
-@Path("/graph/{graphName}/doOperation")
+@Path("/graph/doOperation")
 @Api(value = "operations", description = "Allows operations to be executed on the graph. See <a href='https://github.com/gchq/Gaffer/wiki/operation-examples' target='_blank'>Wiki</a>.")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public interface IOperationService {
+public interface IFederatedOperationService {
 
     @POST
     @ApiOperation(value = "Performs the given operation chain on the graph", response = Object.class)
-    Object execute(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName, final OperationChain opChain);
+    Object execute(final OperationChain opChain);
 
     @POST
     @Path("/operation")
     @ApiOperation(value = "Performs the given operation on the graph", response = Object.class)
-    Object execute(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName, final Operation operation);
+    Object execute(final Operation operation);
 
     @POST
     @Path("/chunked/operation")
     @ApiOperation(value = "Performs the given operation on the graph, returned chunked output. NOTE - does not work in Swagger.", response = Object.class)
-    ChunkedOutput<String> executeChunked(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName, final Operation operation);
+    ChunkedOutput<String> executeChunked(final Operation operation);
 
     @POST
     @Path("/chunked")
     @ApiOperation(value = "Performs the given operation chain on the graph, returned chunked output. NOTE - does not work in Swagger.", response = Object.class)
-    ChunkedOutput<String> executeChunked(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName, final OperationChain<CloseableIterable<Element>> opChain);
+    ChunkedOutput<String> executeChunked(final OperationChain<CloseableIterable<Element>> opChain);
 
     @POST
     @Path("/generate/objects")
     @ApiOperation(value = "Generate objects from elements", response = Object.class, responseContainer = "List")
-    CloseableIterable<Object> generateObjects(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName, final GenerateObjects<Object> operation);
+    CloseableIterable<Object> generateObjects(final GenerateObjects<Object> operation);
 
     @POST
     @Path("/generate/elements")
     @ApiOperation(value = "Generate elements from objects", response = Element.class, responseContainer = "List")
-    CloseableIterable<Element> generateElements(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName, final GenerateElements<Object> operation);
+    CloseableIterable<Element> generateElements(final GenerateElements<Object> operation);
 
     @POST
     @Path("/get/entityIds/adjacent")
     @ApiOperation(value = "Gets adjacent entity seeds", response = EntityId.class, responseContainer = "List")
-    CloseableIterable<EntityId> getAdjacentIds(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName, final GetAdjacentIds operation);
+    CloseableIterable<EntityId> getAdjacentIds(final GetAdjacentIds operation);
 
     @POST
     @Path("/get/elements/all")
     @ApiOperation(value = "Gets all elements", response = Element.class, responseContainer = "List")
-    CloseableIterable<Element> getAllElements(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName, final GetAllElements operation);
+    CloseableIterable<Element> getAllElements(final GetAllElements operation);
 
     @POST
     @Path("/get/elements")
     @ApiOperation(value = "Gets elements", response = Element.class, responseContainer = "List")
-    CloseableIterable<Element> getElements(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName, final GetElements operation);
+    CloseableIterable<Element> getElements(final GetElements operation);
 
     @PUT
     @Path("/add/elements")
     @ApiOperation(value = "Add elements to the graph", response = Boolean.class)
-    void addElements(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName, final AddElements operation);
+    void addElements(final AddElements operation);
 }

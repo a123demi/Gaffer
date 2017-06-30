@@ -459,7 +459,9 @@ public final class Graph {
         }
 
         public Builder addHook(final GraphHook graphHook) {
-            this.graphHooks.add(graphHook);
+            if (null != graphHook) {
+                this.graphHooks.add(graphHook);
+            }
             return this;
         }
 

@@ -52,12 +52,12 @@ public class JobService implements IJobService {
     private UserFactory userFactory;
 
     @Override
-    public JobDetail executeJob(final OperationChain opChain) {
+    public JobDetail executeJob(final String graphName, final OperationChain opChain) {
         final User user = userFactory.createUser();
         preOperationHook(opChain, user);
 
         try {
-            final JobDetail jobDetail = graphFactory.getGraph().executeJob(opChain, user);
+            final JobDetail jobDetail = graphFactory.getGraph(graphName).executeJob(opChain, user);
             LOGGER.info("Job started = {}", jobDetail);
             return jobDetail;
         } catch (final OperationException e) {
@@ -68,18 +68,18 @@ public class JobService implements IJobService {
     }
 
     @Override
-    public CloseableIterable<JobDetail> details() {
+    public CloseableIterable<JobDetail> details(final String graphName) {
         try {
-            return graphFactory.getGraph().execute(new GetAllJobDetails(), userFactory.createUser());
+            return graphFactory.getGraph(graphName).execute(new GetAllJobDetails(), userFactory.createUser());
         } catch (final OperationException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public JobDetail details(final String id) {
+    public JobDetail details(final String graphName, final String id) {
         try {
-            return graphFactory.getGraph().execute(
+            return graphFactory.getGraph(graphName).execute(
                     new GetJobDetails.Builder()
                             .jobId(id)
                             .build(),
@@ -90,9 +90,9 @@ public class JobService implements IJobService {
     }
 
     @Override
-    public CloseableIterable results(final String id) {
+    public CloseableIterable results(final String graphName, final String id) {
         try {
-            return graphFactory.getGraph().execute(
+            return graphFactory.getGraph(graphName).execute(
                     new GetJobResults.Builder()
                             .jobId(id)
                             .build(),

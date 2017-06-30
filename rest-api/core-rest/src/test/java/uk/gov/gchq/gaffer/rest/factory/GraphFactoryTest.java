@@ -16,6 +16,7 @@
 
 package uk.gov.gchq.gaffer.rest.factory;
 
+import org.junit.Before;
 import org.junit.Test;
 import uk.gov.gchq.gaffer.graph.hook.OperationAuthoriser;
 import uk.gov.gchq.gaffer.rest.GraphFactoryForTest;
@@ -23,11 +24,19 @@ import uk.gov.gchq.gaffer.rest.SystemProperty;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 
 public class GraphFactoryTest {
+    @Before
+    public void before() {
+        for (final String key : System.getProperties().stringPropertyNames()) {
+            if (key.startsWith(SystemProperty.GRAPH_PREFIX)) {
+                System.clearProperty(key);
+            }
+        }
+    }
+
     @Test
     public void shouldCreateDefaultGraphFactoryWhenNoSystemProperty() {
         // Given
@@ -75,17 +84,5 @@ public class GraphFactoryTest {
 
         // Then
         assertNull(opAuthoriser);
-    }
-
-    @Test
-    public void shouldDefaultToSingletonGraph() {
-        // Given
-        final DefaultGraphFactory factory = new DefaultGraphFactory();
-
-        // When
-        final boolean isSingleton = factory.isSingletonGraph();
-
-        // Then
-        assertTrue(isSingleton);
     }
 }

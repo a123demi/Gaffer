@@ -27,6 +27,7 @@ import org.reflections.util.ClasspathHelper;
 import uk.gov.gchq.gaffer.data.generator.ElementGenerator;
 import uk.gov.gchq.gaffer.data.generator.ObjectGenerator;
 import uk.gov.gchq.gaffer.operation.Operation;
+import uk.gov.gchq.gaffer.rest.GraphConfig;
 import uk.gov.gchq.gaffer.rest.SystemProperty;
 import uk.gov.gchq.gaffer.rest.factory.GraphFactory;
 import uk.gov.gchq.gaffer.rest.factory.UserFactory;
@@ -69,8 +70,13 @@ public class GraphConfigurationService implements IGraphConfigurationService {
     }
 
     @Override
-    public Schema getSchema() {
-        return graphFactory.getGraph().getSchema();
+    public void addGraph(final String graphName, final GraphConfig graphConfig) {
+        graphFactory.addGraph(graphName, graphConfig);
+    }
+
+    @Override
+    public Schema getSchema(final String graphName) {
+        return graphFactory.getGraph(graphName).getSchema();
     }
 
     @Override
@@ -141,12 +147,12 @@ public class GraphConfigurationService implements IGraphConfigurationService {
     }
 
     @Override
-    public Set<StoreTrait> getStoreTraits() {
-        return graphFactory.getGraph().getStoreTraits();
+    public Set<StoreTrait> getStoreTraits(final String graphName) {
+        return graphFactory.getGraph(graphName).getStoreTraits();
     }
 
     @Override
-    public Set<Class> getNextOperations(final String operationClassName) {
+    public Set<Class> getNextOperations(final String graphName, final String operationClassName) {
         Class<? extends Operation> opClass;
         try {
             opClass = Class.forName(operationClassName).asSubclass(Operation.class);
@@ -156,7 +162,7 @@ public class GraphConfigurationService implements IGraphConfigurationService {
             throw new IllegalArgumentException(operationClassName + " does not extend Operation", e);
         }
 
-        return (Set) graphFactory.getGraph().getNextOperations(opClass);
+        return (Set) graphFactory.getGraph(graphName).getNextOperations(opClass);
     }
 
     @Override
@@ -170,13 +176,13 @@ public class GraphConfigurationService implements IGraphConfigurationService {
     }
 
     @Override
-    public Set<Class> getOperations() {
-        return (Set) graphFactory.getGraph().getSupportedOperations();
+    public Set<Class> getOperations(final String graphName) {
+        return (Set) graphFactory.getGraph(graphName).getSupportedOperations();
     }
 
     @Override
-    public Boolean isOperationSupported(final Class operation) {
-        return graphFactory.getGraph().isSupported(operation);
+    public Boolean isOperationSupported(final String graphName, final Class operation) {
+        return graphFactory.getGraph(graphName).isSupported(operation);
     }
 
     private static Set<Class> getSubClasses(final Class<?> clazz) {

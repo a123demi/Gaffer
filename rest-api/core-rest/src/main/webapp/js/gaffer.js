@@ -19,10 +19,11 @@ $("#resource_operations .operation-params").find("td:eq(2)").append("<input type
 
 function loadExample(exampleButton){
     var urlSuffix = $(exampleButton).closest('.operation').find(".path").text().trim();
+    urlSuffix = urlSuffix.replace("{graphName}/", "");
     var exampleUrl = getVersion() + "/example" + urlSuffix;
     var onSuccess = function(response){
         var json=JSON.stringify(response, null,"   ");
-        $(exampleButton.parentElement.parentElement).find("textarea").val(json);
+        $(exampleButton.parentElement.parentElement.parentElement).find("textarea").val(json);
     };
     $.ajax({url: exampleUrl, success: onSuccess});
 }

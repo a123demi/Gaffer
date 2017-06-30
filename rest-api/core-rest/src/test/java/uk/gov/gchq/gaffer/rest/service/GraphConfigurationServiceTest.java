@@ -60,6 +60,7 @@ import static uk.gov.gchq.gaffer.store.StoreTrait.TRANSFORMATION;
 
 @RunWith(MockitoJUnitRunner.class)
 public class GraphConfigurationServiceTest {
+    private static final String GRAPH_ID = "graph1";
 
     @InjectMocks
     private GraphConfigurationService service;
@@ -83,7 +84,7 @@ public class GraphConfigurationServiceTest {
         final Graph graph = new Graph.Builder().store(store).build();
         final Set<Class<? extends Operation>> operations = new HashSet<>();
         operations.add(AddElements.class);
-        given(graphFactory.getGraph()).willReturn(graph);
+        given(graphFactory.getGraph(GRAPH_ID)).willReturn(graph);
         given(graph.getSupportedOperations()).willReturn(operations);
         given(graph.isSupported(AddElements.class)).willReturn(true);
 
@@ -151,7 +152,7 @@ public class GraphConfigurationServiceTest {
         given(store.getNextOperations(GetElements.class)).willReturn(expectedNextOperations);
 
         // When
-        final Set<Class> nextOperations = service.getNextOperations(GetElements.class.getName());
+        final Set<Class> nextOperations = service.getNextOperations(GRAPH_ID, GetElements.class.getName());
 
 
         // Then
@@ -162,7 +163,7 @@ public class GraphConfigurationServiceTest {
     public void shouldThrowExceptionWhenGetNextOperationsWithUnknownClassName() throws IOException {
         // When / Then
         try {
-            service.getNextOperations("an unknown class name");
+            service.getNextOperations(GRAPH_ID, "an unknown class name");
             fail("Exception expected");
         } catch (final IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("Operation class was not found"));
@@ -173,7 +174,7 @@ public class GraphConfigurationServiceTest {
     public void shouldThrowExceptionWhenGetNextOperationsWithNonOperationClassName() throws IOException {
         // When / Then
         try {
-            service.getNextOperations(String.class.getName());
+            service.getNextOperations(GRAPH_ID, String.class.getName());
             fail("Exception expected");
         } catch (final IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("does not extend Operation"));
@@ -183,7 +184,7 @@ public class GraphConfigurationServiceTest {
     @Test
     public void shouldGetStoreTraits() throws IOException {
         // When
-        final Set<StoreTrait> traits = service.getStoreTraits();
+        final Set<StoreTrait> traits = service.getStoreTraits(GRAPH_ID);
         // Then
         assertNotNull(traits);
         assertTrue("Collection size should be 6", traits.size() == 6);
@@ -225,7 +226,7 @@ public class GraphConfigurationServiceTest {
     @Test
     public void shouldGetAllAvailableOperations() throws IOException {
         // When
-        final Set<Class> supportedOperations = service.getOperations();
+        final Set<Class> supportedOperations = service.getOperations(GRAPH_ID);
 
         // Then
         assertTrue(supportedOperations.size() > 0);
@@ -235,18 +236,18 @@ public class GraphConfigurationServiceTest {
     @Test
     public void shouldValidateWhetherOperationIsSupported() throws IOException {
         // When
-        final Set<Class> supportedOperations = service.getOperations();
+        final Set<Class> supportedOperations = service.getOperations(GRAPH_ID);
 
         for (final Class<? extends Operation> operationClass : supportedOperations) {
             // Then
-            assertTrue(service.isOperationSupported(operationClass));
+            assertTrue(service.isOperationSupported(GRAPH_ID, operationClass));
         }
     }
 
     @Test
     public void shouldSerialiseAndDeserialiseGetStoreTraits() throws IOException {
         // When
-        byte[] bytes = serialiser.serialise(service.getStoreTraits());
+        byte[] bytes = serialiser.serialise(service.getStoreTraits(GRAPH_ID));
         final Set<StoreTrait> traits = serialiser.deserialise(bytes, Set.class);
 
         // Then

@@ -18,6 +18,7 @@ package uk.gov.gchq.gaffer.rest.service;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import uk.gov.gchq.gaffer.core.exception.GafferRuntimeException;
@@ -28,36 +29,59 @@ import uk.gov.gchq.gaffer.rest.factory.UserFactory;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * An <code>StatusService</code> has methods to check the status of the system
  */
-@Path("/status")
+@Path("/")
 @Produces(MediaType.APPLICATION_JSON)
-@Api(value = "/status", description = "Methods to check the status of the system.")
+@Api(value = "/", description = "Methods to check the status of the system.")
 public class StatusService {
 
-     @Inject
+    @Inject
     private GraphFactory graphFactory;
 
     @Inject
     private UserFactory userFactory;
 
+    @Path("/status")
     @GET
     @ApiOperation(value = "Returns the status of the service", response = SystemStatus.class)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK"),
             @ApiResponse(code = 500, message = "Something wrong in Server")})
-    public SystemStatus status() {
+    public Map<String, SystemStatus> status() {
+        if (graphFactory.getGraphs().isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        final Map<String, SystemStatus> statuses = new HashMap<>(graphFactory.getGraphNames().size());
+        for (final String graphName : graphFactory.getGraphNames()) {
+            statuses.put(graphName, status(graphName));
+        }
+
+        return statuses;
+    }
+
+    @Path("/{graphName}/status")
+    @GET
+    @ApiOperation(value = "Returns the status of the service", response = SystemStatus.class)
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK"),
+            @ApiResponse(code = 500, message = "Something wrong in Server")})
+    public SystemStatus status(@ApiParam(value = "graphName") @PathParam("graphName") final String graphName) {
         try {
-            if (null != graphFactory.getGraph()) {
+            if (null != graphFactory.getGraph(graphName)) {
                 return new SystemStatus("The system is working normally.");
             }
         } catch (final Exception e) {
             throw new GafferRuntimeException("Unable to create graph.", e, Status.INTERNAL_SERVER_ERROR);
         }
 
-        return new SystemStatus("Unable to create graph.");
+        return new SystemStatus("Graph " + graphName + " could not be found.");
     }
 }
